@@ -274,10 +274,10 @@ def save_boat(
 
 
 CARD_GENERIC = Card(88, 63)
-GENERIC_PARAMS = BoatParams(boat_height=76)
+GENERIC_PARAMS = BoatParams(boat_height=74)
 
 CARD_RECT = Card(60, 60)
-RECT_PARAMS = BoatParams(boat_height=76)
+RECT_PARAMS = BoatParams(boat_height=71)
 
 
 class ToCut(NamedTuple):
@@ -354,7 +354,7 @@ RAW_EQUIPMENT = [
 ]
 
 POTIONS = [
-    make_equip(image=None, text=f'Lv {level}', stack_depth=9)
+    make_equip('potion', text=f'Lv {level}', stack_depth=9)
     for level in range(1, 4)
 ]
 
