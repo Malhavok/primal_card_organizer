@@ -241,13 +241,16 @@ def draw_boat(
 
 
 def save_boat(
-        filename: str,
+        output_file: pathlib.Path,
+        card: Card,
+        stack_depth: int,
+        board_params: BoatParams,
         with_cutouts: bool,
         image_path: pathlib.Path | None = None,
         text: str | None = None,
 ) -> None:
     drawing = svgwrite.Drawing(
-        filename=filename,
+        filename='test',
         size=SIZE,
         viewBox=VIEW_BOX,
         profile='tiny',
@@ -255,9 +258,9 @@ def save_boat(
 
     group = draw_boat(
         drawing=drawing,
-        card=Card(88, 63),
-        stack_depth=10,
-        boat_params=BoatParams(),
+        card=card,
+        stack_depth=stack_depth,
+        boat_params=board_params,
         with_cutouts=with_cutouts,
         image_path=image_path,
         text=text,
@@ -267,12 +270,114 @@ def save_boat(
 
     buffer = io.StringIO()
     drawing.write(buffer)
-    cairosvg.svg2svg(buffer.getvalue(), write_to=filename)
+    cairosvg.svg2svg(buffer.getvalue(), write_to=str(output_file))
+
+
+CARD_GENERIC = Card(88, 63)
+GENERIC_PARAMS = BoatParams(boat_height=76)
+
+CARD_RECT = Card(60, 60)
+RECT_PARAMS = BoatParams(boat_height=76)
+
+
+class ToCut(NamedTuple):
+    filename: str
+    card: Card
+    params: BoatParams
+    stack_depth: int
+    image: pathlib.Path | None = None
+    text: str | None = None
+
+
+def make_monster(name: str, stack_depth: int = 10) -> ToCut:
+    image = pathlib.Path('./icons/monsters') / f'{name.lower()}.svg'
+    if not image.exists():
+        image = None
+    return ToCut(
+        filename=name,
+        card=CARD_GENERIC,
+        params=GENERIC_PARAMS,
+        stack_depth=stack_depth,
+        image=image,
+        text=None,
+    )
+
+
+def make_equip(image: str | None, text: str | None, stack_depth: int) -> ToCut:
+    image_path = image and pathlib.Path('./icons/elements') / f'{image}.svg'
+    return ToCut(
+        filename=f'{image}_{text}',
+        card=CARD_RECT,
+        params=RECT_PARAMS,
+        stack_depth=stack_depth,
+        image=image_path,
+        text=text,
+    )
+
+
+MONSTERS = [
+    make_monster('Vyraxen'),
+    make_monster('Kharja'),
+    make_monster('Toramat'),
+    make_monster('Dygorax'),
+    make_monster('Korowon'),
+    make_monster('Felaxir'),
+    make_monster('Morkraas'),
+    make_monster('Jekoros'),
+    make_monster('Hurom'),
+    make_monster('Tarragua'),
+    make_monster('Ozew', stack_depth=13),
+    make_monster('Orouxen', stack_depth=15),
+    make_monster('Awakened', stack_depth=14),
+    make_monster('Great sword', stack_depth=18),
+    make_monster('Great bow', stack_depth=18),
+    make_monster('Hammer', stack_depth=18),
+    make_monster('Sword and shield', stack_depth=18),
+]
+
+EQUIPMENT = [
+    make_equip(equip_type, f'Lv {level}', stack_depth=7)
+    for equip_type in [
+        'Coral',
+        'Fire',
+        'Thunder',
+        'Horn',
+        'Metal',
+        'Crystal',
+    ]
+    for level in range(1, 4)
+]
+
+RAW_EQUIPMENT = [
+    make_equip(image=None, text=None, stack_depth=15),
+    make_equip(image=None, text='Base eq', stack_depth=4),
+]
+
+POTIONS = [
+    make_equip(image=None, text=f'Lv {level}', stack_depth=9)
+    for level in range(1, 4)
+]
+
+TO_CUT = MONSTERS + EQUIPMENT + RAW_EQUIPMENT + POTIONS
+
+
+def handle_cut(cut_input: ToCut) -> None:
+    for cutout, suffix in [(True, 'internal'), (False, 'external')]:
+        file_path = pathlib.Path('./output') / f'{cut_input.filename}_{suffix}.svg'
+        save_boat(
+            file_path,
+            with_cutouts=cutout,
+            card=cut_input.card,
+            board_params=cut_input.params,
+            stack_depth=cut_input.stack_depth,
+            image_path=cut_input.image,
+            text=cut_input.text,
+        )
 
 
 def main() -> None:
-    save_boat('internal.svg', with_cutouts=True, image_path=pathlib.Path('icons/monsters/kharja.svg'), text='Kharja')
-    save_boat('external.svg', with_cutouts=False, image_path=pathlib.Path('icons/monsters/kharja.svg'), text='Kharja')
+    for cut in TO_CUT:
+        handle_cut(cut)
 
 
 if __name__ == '__main__':
