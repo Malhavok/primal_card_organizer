@@ -87,6 +87,8 @@ def draw_boat(
         stack_depth: int,
         boat_params: BoatParams,
         with_cutouts: bool,
+        image_path: pathlib.Path | None = None,
+        text: str | None = None,
 ) -> SVGGroup:
     full_card_width = card.width + boat_params.tolerance
     full_stack_depth = stack_depth + boat_params.tolerance
@@ -193,50 +195,57 @@ def draw_boat(
     box_size = size_diff - offset * 2
     bottom_image_size = int(front_size * 0.8)
 
-    image_data = get_image_data(pathlib.Path('icons/monsters/vyraxen.svg'))
-    if with_cutouts:
-        group.add(
-            drawing.image(
+    if image_path is not None:
+        image_data = get_image_data(image_path)
+        if with_cutouts:
+            group.add(
+                drawing.image(
+                    image_data,
+                    insert=(boat_params.flap_length + full_stack_depth + boat_params.rounding_radius, offset),
+                    size=(box_size, box_size),
+                )
+            )
+        else:
+            image = drawing.image(
                 image_data,
-                insert=(boat_params.flap_length + full_stack_depth + boat_params.rounding_radius, offset),
-                size=(box_size, box_size),
+                insert=(
+                    boat_params.flap_length + full_stack_depth + (full_card_width - bottom_image_size) / 2,
+                    boat_params.boat_height + full_stack_depth + (front_size - bottom_image_size) / 2,
+                ),
+                size=(bottom_image_size, bottom_image_size),
+            )
+            image.rotate(180, center=(
+                boat_params.flap_length + full_stack_depth + full_card_width / 2,
+                boat_params.boat_height + full_stack_depth + front_size / 2,
+            ))
+            group.add(
+                image
+            )
+
+    if text is not None and with_cutouts:
+        group.add(
+            drawing.text(
+                text,
+                insert=(
+                    boat_params.flap_length + full_stack_depth + 2 * boat_params.rounding_radius + offset + box_size,
+                    offset + box_size,
+                ),
+                font_size=f'{box_size}pt',
+                font_family="Katari",
+                fill="black",
+                text_anchor="start",
             )
         )
-    else:
-        image = drawing.image(
-            image_data,
-            insert=(
-                boat_params.flap_length + full_stack_depth + (full_card_width - bottom_image_size) / 2,
-                boat_params.boat_height + full_stack_depth + (front_size - bottom_image_size) / 2,
-            ),
-            size=(bottom_image_size, bottom_image_size),
-        )
-        image.rotate(180, center=(
-            boat_params.flap_length + full_stack_depth + full_card_width / 2,
-            boat_params.boat_height + full_stack_depth + front_size / 2,
-        ))
-        group.add(
-            image
-        )
-
-    # group.add(
-    #     drawing.text(
-    #         "01234567890",
-    #         insert=(
-    #             boat_params.flap_length + full_stack_depth + 2 * boat_params.rounding_radius + offset + box_size,
-    #             offset + box_size,
-    #         ),
-    #         font_size=f'{box_size}pt',
-    #         font_family="Katari",
-    #         fill="black",
-    #         text_anchor="start",
-    #     )
-    # )
 
     return group
 
 
-def save_boat(filename: str, **kwargs) -> None:
+def save_boat(
+        filename: str,
+        with_cutouts: bool,
+        image_path: pathlib.Path | None = None,
+        text: str | None = None,
+) -> None:
     drawing = svgwrite.Drawing(
         filename=filename,
         size=SIZE,
@@ -249,7 +258,9 @@ def save_boat(filename: str, **kwargs) -> None:
         card=Card(88, 63),
         stack_depth=10,
         boat_params=BoatParams(),
-        **kwargs,
+        with_cutouts=with_cutouts,
+        image_path=image_path,
+        text=text,
     )
     group.translate(20, 20)
     drawing.add(group)
@@ -260,8 +271,8 @@ def save_boat(filename: str, **kwargs) -> None:
 
 
 def main() -> None:
-    save_boat('internal.svg', with_cutouts=True)
-    save_boat('external.svg', with_cutouts=False)
+    save_boat('internal.svg', with_cutouts=True, image_path=pathlib.Path('icons/monsters/kharja.svg'), text='Kharja')
+    save_boat('external.svg', with_cutouts=False, image_path=pathlib.Path('icons/monsters/kharja.svg'), text='Kharja')
 
 
 if __name__ == '__main__':
