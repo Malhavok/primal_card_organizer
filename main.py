@@ -1,8 +1,10 @@
 import base64
+import io
 import math
 import pathlib
 from typing import NamedTuple
 
+import cairosvg
 import svgwrite
 from svgwrite.container import Group as SVGGroup
 
@@ -252,7 +254,9 @@ def save_boat(filename: str, **kwargs) -> None:
     group.translate(20, 20)
     drawing.add(group)
 
-    drawing.save(pretty=True)
+    buffer = io.StringIO()
+    drawing.write(buffer)
+    cairosvg.svg2svg(buffer.getvalue(), write_to=filename)
 
 
 def main() -> None:
