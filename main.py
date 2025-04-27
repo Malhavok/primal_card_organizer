@@ -29,10 +29,11 @@ class BoatParams(NamedTuple):
     boat_height: int = 76
     card_cover_front: float = 0.67
     card_cover_side: float = 0.5
-    tolerance: int = 1
+    tolerance: int | float = 1
     rounding_radius: int = 5
     flap_length: int = 10
     flap_cut: int = 2
+    internal_flap_ratio: float = 0.6
 
     def front_size(self, card_height: int) -> int:
         return int(math.ceil(card_height * self.card_cover_front))
@@ -81,6 +82,12 @@ def get_image_data(filepath: pathlib.Path) -> str:
     return f'data:image/svg+xml;base64,{data}'
 
 
+class DrawBoatData(NamedTuple):
+    group: SVGGroup
+    width: int
+    height: int
+
+
 def draw_boat(
         drawing: svgwrite.Drawing,
         card: Card,
@@ -89,7 +96,8 @@ def draw_boat(
         with_cutouts: bool,
         image_path: pathlib.Path | None = None,
         text: str | None = None,
-) -> SVGGroup:
+        with_internal_flaps: bool = False,
+) -> DrawBoatData:
     full_card_width = card.width + boat_params.tolerance
     full_stack_depth = stack_depth + boat_params.tolerance
     front_size = boat_params.front_size(card.height)
@@ -223,11 +231,12 @@ def draw_boat(
             )
 
     if text is not None and with_cutouts:
+        image_offset = 0 if image_path is None else box_size
         group.add(
             drawing.text(
                 text,
                 insert=(
-                    boat_params.flap_length + full_stack_depth + 2 * boat_params.rounding_radius + offset + box_size,
+                    boat_params.flap_length + full_stack_depth + 2 * boat_params.rounding_radius + offset + image_offset,
                     offset + box_size,
                 ),
                 font_size=f'{box_size}pt',
@@ -237,7 +246,11 @@ def draw_boat(
             )
         )
 
-    return group
+    return DrawBoatData(
+        group=group,
+        width=full_card_width + 2 * full_stack_depth + 2 * boat_params.flap_length,
+        height=boat_params.boat_height + full_stack_depth + front_size,
+    )
 
 
 def save_boat(
@@ -256,7 +269,7 @@ def save_boat(
         profile='tiny',
     )
 
-    group = draw_boat(
+    boat_data = draw_boat(
         drawing=drawing,
         card=card,
         stack_depth=stack_depth,
@@ -265,8 +278,8 @@ def save_boat(
         image_path=image_path,
         text=text,
     )
-    group.translate(20, 20)
-    drawing.add(group)
+    boat_data.group.translate((A4_WIDTH - boat_data.width) / 2, 20)
+    drawing.add(boat_data.group)
 
     buffer = io.StringIO()
     drawing.write(buffer)
@@ -274,7 +287,7 @@ def save_boat(
 
 
 CARD_GENERIC = Card(88, 63)
-GENERIC_PARAMS = BoatParams(boat_height=74)
+GENERIC_PARAMS = BoatParams(boat_height=75)
 
 CARD_RECT = Card(60, 60)
 RECT_PARAMS = BoatParams(boat_height=71)
@@ -287,6 +300,7 @@ class ToCut(NamedTuple):
     stack_depth: int
     image: pathlib.Path | None = None
     text: str | None = None
+    with_internal_flaps: bool = False
 
 
 def make_monster(name: str, stack_depth: int = 10) -> ToCut:
@@ -294,7 +308,7 @@ def make_monster(name: str, stack_depth: int = 10) -> ToCut:
     if not image.exists():
         image = None
     return ToCut(
-        filename=name,
+        filename=f'monster_{name}',
         card=CARD_GENERIC,
         params=GENERIC_PARAMS,
         stack_depth=stack_depth,
@@ -303,15 +317,16 @@ def make_monster(name: str, stack_depth: int = 10) -> ToCut:
     )
 
 
-def make_equip(image: str | None, text: str | None, stack_depth: int) -> ToCut:
+def make_equip(image: str | None, text: str | None, stack_depth: int, with_flaps: bool = False) -> ToCut:
     image_path = image and pathlib.Path('./icons/elements') / f'{image}.svg'
     return ToCut(
-        filename=f'{image}_{text}',
+        filename=f'eq_{image or text}',
         card=CARD_RECT,
         params=RECT_PARAMS,
         stack_depth=stack_depth,
         image=image_path,
         text=text,
+        with_internal_flaps=with_flaps,
     )
 
 
@@ -336,7 +351,7 @@ MONSTERS = [
 ]
 
 EQUIPMENT = [
-    make_equip(equip_type, f'Lv {level}', stack_depth=7)
+    make_equip(equip_type, equip_type, stack_depth=17, with_flaps=True)
     for equip_type in [
         'Coral',
         'Fire',
@@ -345,17 +360,15 @@ EQUIPMENT = [
         'Metal',
         'Crystal',
     ]
-    for level in range(1, 4)
 ]
 
 RAW_EQUIPMENT = [
-    make_equip(image=None, text=None, stack_depth=15),
-    make_equip(image=None, text='Base eq', stack_depth=4),
+    make_equip(image=None, text='Rewards', stack_depth=14),
+    make_equip(image=None, text='Base eq', stack_depth=3),
 ]
 
 POTIONS = [
-    make_equip('potion', text=f'Lv {level}', stack_depth=9)
-    for level in range(1, 4)
+    make_equip('potion', text=None, stack_depth=25, with_flaps=True),
 ]
 
 TO_CUT = MONSTERS + EQUIPMENT + RAW_EQUIPMENT + POTIONS
