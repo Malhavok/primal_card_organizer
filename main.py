@@ -96,7 +96,6 @@ def draw_boat(
         with_cutouts: bool,
         image_path: pathlib.Path | None = None,
         text: str | None = None,
-        with_internal_flaps: bool = False,
 ) -> DrawBoatData:
     full_card_width = card.width + boat_params.tolerance
     full_stack_depth = stack_depth + boat_params.tolerance
@@ -317,7 +316,7 @@ def make_monster(name: str, stack_depth: int = 10) -> ToCut:
     )
 
 
-def make_equip(image: str | None, text: str | None, stack_depth: int, with_flaps: bool = False) -> ToCut:
+def make_equip(image: str | None, text: str | None, stack_depth: int) -> ToCut:
     image_path = image and pathlib.Path('./icons/elements') / f'{image}.svg'
     return ToCut(
         filename=f'eq_{image or text}',
@@ -326,7 +325,6 @@ def make_equip(image: str | None, text: str | None, stack_depth: int, with_flaps
         stack_depth=stack_depth,
         image=image_path,
         text=text,
-        with_internal_flaps=with_flaps,
     )
 
 
@@ -351,7 +349,7 @@ MONSTERS = [
 ]
 
 EQUIPMENT = [
-    make_equip(equip_type, equip_type, stack_depth=17, with_flaps=True)
+    make_equip(equip_type, equip_type, stack_depth=17)
     for equip_type in [
         'Coral',
         'Fire',
@@ -368,7 +366,7 @@ RAW_EQUIPMENT = [
 ]
 
 POTIONS = [
-    make_equip('potion', text=None, stack_depth=25, with_flaps=True),
+    make_equip('potion', text=None, stack_depth=25),
 ]
 
 TO_CUT = MONSTERS + EQUIPMENT + RAW_EQUIPMENT + POTIONS
