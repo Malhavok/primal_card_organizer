@@ -29,7 +29,8 @@ class BoatParams(NamedTuple):
     boat_height: int = 76
     card_cover_front: float = 0.67
     card_cover_side: float = 0.5
-    tolerance: int | float = 1
+    width_tolerance: int | float = 1
+    depth_tolerance: int | float = 0.5
     rounding_radius: int = 5
     flap_length: int = 10
     flap_cut: int = 2
@@ -97,8 +98,8 @@ def draw_boat(
         image_path: pathlib.Path | None = None,
         text: str | None = None,
 ) -> DrawBoatData:
-    full_card_width = card.width + boat_params.tolerance
-    full_stack_depth = stack_depth + boat_params.tolerance
+    full_card_width = card.width + boat_params.width_tolerance
+    full_stack_depth = stack_depth + boat_params.depth_tolerance
     front_size = boat_params.front_size(card.height)
     side_size = boat_params.side_size(card.height)
     front_radius = front_size - side_size
