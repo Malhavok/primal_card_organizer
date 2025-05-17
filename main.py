@@ -114,7 +114,7 @@ def draw_boat(
     #         |  Back   |
     #        2|         |15
     #     3+--+---------+--+14
-    #  5  4|  | Bottom  |  |13  <– bottom flaps
+    #  5  4|  | Bottom  |  |13  <– bottom flaps, moved to the bottom of the boat.
     #   +--+--+---------+--+--+12
     #   |  |  |  Front  |  |  |  <– side flaps
     #  6+--+--|         |--+--+11
@@ -127,24 +127,22 @@ def draw_boat(
     # 2
     path_drawer.draw_down(boat_params.boat_height - boat_params.rounding_radius)
 
-    if with_cutouts:
-        path_drawer.draw_down(full_stack_depth)
-        path_drawer.draw_up(full_stack_depth)
+    path_drawer.draw_down(full_stack_depth)
     if with_cutouts:
         path_drawer.draw_right(full_card_width)
         path_drawer.draw_left(full_card_width)
 
     # 3
-    path_drawer.line_by(-boat_params.flap_length, boat_params.flap_cut)
-    # 4
-    path_drawer.draw_down(full_stack_depth - boat_params.flap_cut * 2)
-    path_drawer.line_by(boat_params.flap_length, boat_params.flap_cut)
-    # 5
     if with_cutouts:
-        path_drawer.draw_down(side_size)
-        path_drawer.draw_up(side_size)
         path_drawer.draw_right(full_card_width)
         path_drawer.draw_left(full_card_width)
+
+    path_drawer.draw_down(side_size)
+
+    path_drawer.line_by(-boat_params.flap_length, boat_params.flap_cut)
+    # 4
+    path_drawer.line_by(boat_params.flap_length, boat_params.flap_cut)
+    # 5
 
     path_drawer.draw_left(full_stack_depth)
     if with_cutouts:
@@ -367,7 +365,7 @@ RAW_EQUIPMENT = [
 ]
 
 POTIONS = [
-    make_equip('potion', text=None, stack_depth=25),
+    make_equip('potion', text='Potions', stack_depth=25),
 ]
 
 TO_CUT = MONSTERS + EQUIPMENT + RAW_EQUIPMENT + POTIONS
