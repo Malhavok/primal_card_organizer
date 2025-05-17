@@ -53,8 +53,11 @@ class PathDrawer:
     def close(self) -> None:
         self.commands.append('Z')
 
-    def move(self, x: int, y: int) -> None:
+    def move_to(self, x: int, y: int) -> None:
         self.commands.append(f'M {x} {y}')
+
+    def move_by(self, dx: int, dy: int) -> None:
+        self.commands.append(f'm {dx} {dy}')
 
     def line_to(self, x: int, y: int) -> None:
         self.commands.append(f'L {x} {y}')
@@ -76,6 +79,14 @@ class PathDrawer:
 
     def draw_arc(self, end_x: int, end_y: int, radius: int, counter_clockwise: bool = True) -> None:
         self.commands.append(f'a {radius} {radius} 0 0 {0 if counter_clockwise else 1} {end_x} {end_y}')
+
+    def draw_right_dash_and_back(self, length: int, dash_len: int = 2, stop_len: int = 2) -> None:
+        self.draw_right(length)
+        self.move_by(-length, 0)
+
+    def draw_down_dash_and_back(self, length: int, dash_len: int = 2, stop_len: int = 2) -> None:
+        self.draw_down(length)
+        self.move_by(0, -length)
 
 
 def get_image_data(filepath: pathlib.Path) -> str:
@@ -107,91 +118,76 @@ def draw_boat(
     group = drawing.g()
 
     # Drawing outline of the whole box.
-    #
-    #        0+---------+17
-    #         |Title    |
-    #        1+---------+16
-    #         |  Back   |
-    #        2|         |15
-    #     3+--+---------+--+14
-    #  5  4|  | Bottom  |  |13  <– bottom flaps, moved to the bottom of the boat.
-    #   +--+--+---------+--+--+12
-    #   |  |  |  Front  |  |  |  <– side flaps
-    #  6+--+--|         |--+--+11
-    #      7 8+---------+9 10
+    #     0         1         2
+    #     0123456789012345678901234
+    #  0         /---------\
+    #  1         |Title    |
+    #  2         +---------+
+    #  3         |  Back   |
+    #  4         |         |
+    #  5         +---------+
+    #  6       /\| Bottom  |/\
+    #  7     /+--+---------+--+\
+    #  8    | |  |  Front  |  | |
+    #  9     \+--|         |--+/
+    # 10         +---------+
     path_drawer = PathDrawer()
 
-    path_drawer.move(boat_params.flap_length + full_stack_depth + boat_params.rounding_radius, 0)
-    # 0
+    path_drawer.move_to(boat_params.flap_length + full_stack_depth + boat_params.rounding_radius, 0)
+
     path_drawer.draw_arc(-boat_params.rounding_radius, boat_params.rounding_radius, boat_params.rounding_radius)
-    # 2
     path_drawer.draw_down(boat_params.boat_height - boat_params.rounding_radius)
 
+    if with_cutouts:
+        path_drawer.draw_right_dash_and_back(full_card_width)
+
     path_drawer.draw_down(full_stack_depth)
+
     if with_cutouts:
-        path_drawer.draw_right(full_card_width)
-        path_drawer.draw_left(full_card_width)
+        path_drawer.draw_right_dash_and_back(full_card_width)
+        path_drawer.draw_down_dash_and_back(side_size)
 
-    # 3
+    # First flap, supporting bottom.
+    path_drawer.line_by(-boat_params.flap_cut, -boat_params.flap_length)
+    path_drawer.draw_left(full_stack_depth - 2 * boat_params.flap_cut)
+    path_drawer.line_by(-boat_params.flap_cut, boat_params.flap_length)
+
     if with_cutouts:
-        path_drawer.draw_right(full_card_width)
-        path_drawer.draw_left(full_card_width)
+        path_drawer.draw_right_dash_and_back(full_stack_depth)
+        path_drawer.draw_down_dash_and_back(side_size)
 
-    path_drawer.draw_down(side_size)
-
+    # Second flap, catching back.
     path_drawer.line_by(-boat_params.flap_length, boat_params.flap_cut)
-    # 4
-    path_drawer.line_by(boat_params.flap_length, boat_params.flap_cut)
-    # 5
-
-    path_drawer.draw_left(full_stack_depth)
-    if with_cutouts:
-        path_drawer.draw_down(side_size)
-        path_drawer.draw_up(side_size)
-
-    path_drawer.line_by(-boat_params.flap_length, boat_params.flap_cut)
-    # 6
     path_drawer.draw_down(side_size - boat_params.flap_cut * 2)
-    # 7
     path_drawer.line_by(boat_params.flap_length, boat_params.flap_cut)
+
     path_drawer.draw_right(full_stack_depth)
-    # 8
     path_drawer.draw_arc(front_radius, front_radius, front_radius)
-    # 9
     path_drawer.draw_right(full_card_width - 2 * front_radius)
-    # 10
     path_drawer.draw_arc(front_radius, -front_radius, front_radius)
-    # 11
     path_drawer.draw_right(full_stack_depth)
+
+    # Third flap, catching back.
     path_drawer.line_by(boat_params.flap_length, -boat_params.flap_cut)
-    # 12
     path_drawer.draw_up(side_size - 2 * boat_params.flap_cut)
-    # 13
     path_drawer.line_by(-boat_params.flap_length, -boat_params.flap_cut)
 
     if with_cutouts:
-        path_drawer.draw_down(side_size)
-        path_drawer.draw_up(side_size)
+        path_drawer.draw_down_dash_and_back(side_size)
 
-    path_drawer.draw_left(full_stack_depth)
-
-    if with_cutouts:
-        path_drawer.draw_down(side_size)
-        path_drawer.draw_up(side_size)
-
-    path_drawer.line_by(boat_params.flap_length, -boat_params.flap_cut)
-    # 14
-    path_drawer.draw_up(full_stack_depth - 2 * boat_params.flap_cut)
-    path_drawer.line_by(-boat_params.flap_length, -boat_params.flap_cut)
+    # Fourth flap, catching bottom.
+    path_drawer.line_by(-boat_params.flap_cut, -boat_params.flap_length)
+    path_drawer.draw_left(full_stack_depth - 2 * boat_params.flap_cut)
+    path_drawer.line_by(-boat_params.flap_cut, boat_params.flap_length)
 
     if with_cutouts:
-        path_drawer.draw_down(full_stack_depth)
-        path_drawer.draw_up(full_stack_depth)
-    # 15
+        path_drawer.draw_right_dash_and_back(full_stack_depth)
+        path_drawer.draw_down_dash_and_back(side_size)
+
+    path_drawer.draw_up(full_stack_depth)
     path_drawer.draw_up(boat_params.boat_height - boat_params.rounding_radius)
-    # 17
     path_drawer.draw_arc(-boat_params.rounding_radius, -boat_params.rounding_radius, boat_params.rounding_radius)
-    path_drawer.close()
+    path_drawer.draw_left(full_card_width - 2 * boat_params.rounding_radius)
 
     path = drawing.path(d=path_drawer.get_draw_command(), fill="none", stroke="black", stroke_width=HAIRLINE_THIN)
     group.add(path)
