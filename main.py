@@ -2,7 +2,10 @@ import base64
 import io
 import math
 import pathlib
-from typing import NamedTuple
+from typing import (
+    NamedTuple,
+    Callable,
+)
 
 import cairosvg
 import svgwrite
@@ -80,13 +83,42 @@ class PathDrawer:
     def draw_arc(self, end_x: int, end_y: int, radius: int, counter_clockwise: bool = True) -> None:
         self.commands.append(f'a {radius} {radius} 0 0 {0 if counter_clockwise else 1} {end_x} {end_y}')
 
-    def draw_right_dash_and_back(self, length: int, dash_len: int = 2, stop_len: int = 2) -> None:
-        self.draw_right(length)
+    def draw_right_dash_and_back(self, length: int, dash_len: int = 1, stop_len: int = 1) -> None:
+        self._make_dashes(self.draw_right, lambda x: self.move_by(x, 0), length, dash_len, stop_len)
         self.move_by(-length, 0)
 
-    def draw_down_dash_and_back(self, length: int, dash_len: int = 2, stop_len: int = 2) -> None:
-        self.draw_down(length)
+    def draw_down_dash_and_back(self, length: int, dash_len: int = 1, stop_len: int = 1) -> None:
+        self._make_dashes(self.draw_down, lambda x: self.move_by(0, x), length, dash_len, stop_len)
         self.move_by(0, -length)
+
+    @classmethod
+    def _make_dashes(
+            cls,
+            cut_fun: Callable[[int], None],
+            step_fun: Callable[[int], None],
+            length: int,
+            dash_len: int,
+            stop_len: int,
+    ) -> None:
+        step_fun(stop_len)
+
+        # We have to start and end with a stop, so there's never 100% cut.
+        remaining_length = max(0, length - 2 * stop_len)
+        is_dash = True
+        while remaining_length > 0:
+            default_step_len = dash_len if is_dash else stop_len
+            step_len = min(remaining_length, default_step_len)
+
+            if is_dash:
+                cut_fun(step_len)
+            else:
+                step_fun(step_len)
+
+            remaining_length -= step_len
+            is_dash = not is_dash
+
+        step_fun(stop_len)
+
 
 
 def get_image_data(filepath: pathlib.Path) -> str:
