@@ -120,7 +120,6 @@ class PathDrawer:
         step_fun(stop_len)
 
 
-
 def get_image_data(filepath: pathlib.Path) -> str:
     data = base64.b64encode(filepath.read_bytes()).decode()
     return f'data:image/svg+xml;base64,{data}'
