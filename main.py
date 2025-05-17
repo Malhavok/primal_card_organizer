@@ -179,13 +179,16 @@ def draw_boat(
         path_drawer.draw_down_dash_and_back(side_size)
 
     # First flap, supporting bottom.
-    path_drawer.line_by(-boat_params.flap_cut, -boat_params.flap_length)
-    path_drawer.draw_left(full_stack_depth - 2 * boat_params.flap_cut)
-    path_drawer.line_by(-boat_params.flap_cut, boat_params.flap_length)
+    def flap_catching_bottom():
+        path_drawer.line_by(-boat_params.flap_cut, -boat_params.flap_length)
+        path_drawer.draw_left(full_stack_depth - 2 * boat_params.flap_cut)
+        path_drawer.line_by(-boat_params.flap_cut, boat_params.flap_length)
 
-    if with_cutouts:
-        path_drawer.draw_right_dash_and_back(full_stack_depth)
-        path_drawer.draw_down_dash_and_back(side_size)
+        if with_cutouts:
+            path_drawer.draw_right_dash_and_back(full_stack_depth)
+            path_drawer.draw_down_dash_and_back(side_size)
+
+    flap_catching_bottom()
 
     # Second flap, catching back.
     path_drawer.line_by(-boat_params.flap_length, boat_params.flap_cut)
@@ -207,13 +210,7 @@ def draw_boat(
         path_drawer.draw_down_dash_and_back(side_size)
 
     # Fourth flap, catching bottom.
-    path_drawer.line_by(-boat_params.flap_cut, -boat_params.flap_length)
-    path_drawer.draw_left(full_stack_depth - 2 * boat_params.flap_cut)
-    path_drawer.line_by(-boat_params.flap_cut, boat_params.flap_length)
-
-    if with_cutouts:
-        path_drawer.draw_right_dash_and_back(full_stack_depth)
-        path_drawer.draw_down_dash_and_back(side_size)
+    flap_catching_bottom()
 
     path_drawer.draw_up(full_stack_depth)
     path_drawer.draw_up(boat_params.boat_height - boat_params.rounding_radius)
@@ -261,7 +258,11 @@ def draw_boat(
             drawing.text(
                 text,
                 insert=(
-                    boat_params.flap_length + full_stack_depth + 2 * boat_params.rounding_radius + offset + image_offset,
+                    boat_params.flap_length
+                    + full_stack_depth
+                    + 2 * boat_params.rounding_radius
+                    + offset
+                    + image_offset,
                     offset + box_size,
                 ),
                 font_size=f'{box_size}pt',
