@@ -221,7 +221,7 @@ def draw_boat(
     group.add(path)
 
     size_diff = boat_params.boat_height - card.height
-    offset = 2
+    offset = 0.2
     box_size = size_diff - offset * 2
     bottom_image_size = int(front_size * 0.8)
 
@@ -231,7 +231,7 @@ def draw_boat(
             group.add(
                 drawing.image(
                     image_data,
-                    insert=(boat_params.flap_length + full_stack_depth + boat_params.rounding_radius, offset),
+                    insert=(boat_params.flap_length + full_stack_depth + boat_params.rounding_radius / 2, offset),
                     size=(box_size, box_size),
                 )
             )
@@ -260,14 +260,14 @@ def draw_boat(
                 insert=(
                     boat_params.flap_length
                     + full_stack_depth
-                    + 2 * boat_params.rounding_radius
+                    + boat_params.rounding_radius
                     + offset
                     + image_offset,
                     offset + box_size,
                 ),
                 font_size=f'{box_size}pt',
                 font_family="Katari",
-                fill="black",
+                fill="#1F1F1F",
                 text_anchor="start",
             )
         )
@@ -318,6 +318,9 @@ GENERIC_PARAMS = BoatParams(boat_height=75)
 CARD_RECT = Card(60, 60)
 RECT_PARAMS = BoatParams(boat_height=71)
 
+CARD_LARGE = Card(120, 70)
+LARGE_PARAMS = BoatParams()
+
 
 class ToCut(NamedTuple):
     filename: str
@@ -329,7 +332,7 @@ class ToCut(NamedTuple):
     with_internal_flaps: bool = False
 
 
-def make_monster(name: str, stack_depth: int = 10) -> ToCut:
+def make_monster(name: str, stack_depth: int = 10, alt_name: str | None = None) -> ToCut:
     image = pathlib.Path('./icons/monsters') / f'{name.lower()}.svg'
     if not image.exists():
         image = None
@@ -339,7 +342,7 @@ def make_monster(name: str, stack_depth: int = 10) -> ToCut:
         params=GENERIC_PARAMS,
         stack_depth=stack_depth,
         image=image,
-        text=None,
+        text=alt_name or name,
     )
 
 
@@ -351,6 +354,20 @@ def make_equip(image: str | None, text: str | None, stack_depth: int) -> ToCut:
         params=RECT_PARAMS,
         stack_depth=stack_depth,
         image=image_path,
+        text=text,
+    )
+
+
+def make_weapon(image: str, text: str, stack_depth: int = 8) -> ToCut:
+    image = pathlib.Path('./icons/monsters') / f'{image.lower()}.svg'
+    if not image.exists():
+        image = None
+    return ToCut(
+        filename=f'weapon_{text}',
+        card=CARD_LARGE,
+        params=LARGE_PARAMS,
+        stack_depth=stack_depth,
+        image=image,
         text=text,
     )
 
@@ -369,10 +386,10 @@ MONSTERS = [
     make_monster('Ozew', stack_depth=13),
     make_monster('Orouxen', stack_depth=15),
     make_monster('Awakened', stack_depth=14),
-    make_monster('Great sword', stack_depth=18),
-    make_monster('Great bow', stack_depth=18),
+    make_monster('Great sword', stack_depth=18, alt_name='Sword'),
+    make_monster('Great bow', stack_depth=18, alt_name='Bow'),
     make_monster('Hammer', stack_depth=18),
-    make_monster('Sword and shield', stack_depth=18),
+    make_monster('Sword and shield', stack_depth=18, alt_name='Shield'),
 ]
 
 EQUIPMENT = [
@@ -396,7 +413,14 @@ POTIONS = [
     make_equip('potion', text='Potions', stack_depth=25),
 ]
 
-TO_CUT = MONSTERS + EQUIPMENT + RAW_EQUIPMENT + POTIONS
+WEAPONS = [
+    make_weapon('great bow', 'Great Bow'),
+    make_weapon('great sword', 'Great Sword'),
+    make_weapon('hammer', 'Hammer'),
+    make_weapon('sword and shield', 'Sword and shield'),
+]
+
+TO_CUT = MONSTERS + EQUIPMENT + RAW_EQUIPMENT + POTIONS + WEAPONS
 
 
 def handle_cut(cut_input: ToCut) -> None:
