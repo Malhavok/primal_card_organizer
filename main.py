@@ -33,7 +33,7 @@ class BoatParams(NamedTuple):
     card_cover_front: float = 0.67
     card_cover_side: float = 0.5
     width_tolerance: int | float = 1
-    depth_tolerance: int | float = 0.5
+    depth_tolerance: int | float = 1
     rounding_radius: int = 5
     flap_length: int = 10
     flap_cut: int = 2
@@ -332,7 +332,7 @@ class ToCut(NamedTuple):
     with_internal_flaps: bool = False
 
 
-def make_monster(name: str, stack_depth: int = 10, alt_name: str | None = None) -> ToCut:
+def make_monster(name: str, stack_depth: int, alt_name: str | None = None) -> ToCut:
     image = pathlib.Path('./icons/monsters') / f'{name.lower()}.svg'
     if not image.exists():
         image = None
@@ -373,23 +373,42 @@ def make_weapon(image: str, text: str, stack_depth: int = 8) -> ToCut:
 
 
 MONSTERS = [
-    make_monster('Vyraxen'),
-    make_monster('Kharja'),
-    make_monster('Toramat'),
-    make_monster('Dygorax'),
-    make_monster('Korowon'),
-    make_monster('Felaxir'),
-    make_monster('Morkraas'),
-    make_monster('Jekoros'),
-    make_monster('Hurom'),
-    make_monster('Tarragua'),
-    make_monster('Ozew', stack_depth=13),
-    make_monster('Orouxen', stack_depth=15),
-    make_monster('Awakened', stack_depth=14),
-    make_monster('Great sword', stack_depth=18, alt_name='Sword'),
-    make_monster('Great bow', stack_depth=18, alt_name='Bow'),
-    make_monster('Hammer', stack_depth=18),
-    make_monster('Sword and shield', stack_depth=18, alt_name='Shield'),
+    make_monster(name='Vyraxen', stack_depth=10),
+    make_monster(name='Kharja', stack_depth=10),
+    make_monster(name='Toramat', stack_depth=10),
+    make_monster(name='Dygorax', stack_depth=10),
+    make_monster(name='Korowon', stack_depth=10),
+    make_monster(name='Felaxir', stack_depth=10),
+    make_monster(name='Morkraas', stack_depth=10),
+    make_monster(name='Jekoros', stack_depth=10),
+    make_monster(name='Hurom', stack_depth=10),
+    make_monster(name='Tarragua', stack_depth=10),
+    make_monster(name='Ozew', stack_depth=13),
+    make_monster(name='Orouxen', stack_depth=15),
+    make_monster(name='Awakened', stack_depth=14),
+
+    make_monster(name='Pazis', stack_depth=10),
+    make_monster(name='Nagarjas', stack_depth=10),
+
+    make_monster(name='Hydar', stack_depth=10),
+    make_monster(name='Reikal', stack_depth=10),
+
+    make_monster(name='Sirkaaj', stack_depth=10),
+    make_monster(name='Mamuraak', stack_depth=10),
+
+    make_monster(name='Zekath', stack_depth=10),
+    make_monster(name='Zekalith', stack_depth=10),
+    make_monster(name='Xitheros', stack_depth=10),
+    make_monster(name='Taraska', stack_depth=10),
+
+    make_monster(name='Great sword', stack_depth=18, alt_name='Sword'),
+    make_monster(name='Great bow', stack_depth=18, alt_name='Bow'),
+    make_monster(name='Hammer', stack_depth=18),
+    make_monster(name='Sword and Shield', stack_depth=18, alt_name='Shield'),
+    make_monster(name='Dual Blades', stack_depth=18),
+    make_monster(name='Heavy Gun', stack_depth=18, alt_name='Gunbow'),
+
+    make_monster(name='Campaign', stack_depth=10),
 ]
 
 EQUIPMENT = [
@@ -401,6 +420,9 @@ EQUIPMENT = [
         'Horn',
         'Metal',
         'Crystal',
+        'Feather',
+        'Ice',
+        'Venom',
     ]
 ]
 
@@ -417,7 +439,9 @@ WEAPONS = [
     make_weapon('great bow', 'Great Bow'),
     make_weapon('great sword', 'Great Sword'),
     make_weapon('hammer', 'Hammer'),
-    make_weapon('sword and shield', 'Sword and shield'),
+    make_weapon('sword and shield', 'Sword and Shield'),
+    make_weapon('dual blade', 'Dual Blade'),
+    make_weapon('heavy gun', 'Heavy Gun'),
 ]
 
 TO_CUT = MONSTERS + EQUIPMENT + RAW_EQUIPMENT + POTIONS + WEAPONS
