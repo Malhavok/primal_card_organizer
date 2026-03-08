@@ -1,7 +1,9 @@
 import base64
+import contextlib
 import io
 import math
 import pathlib
+import xml.etree.ElementTree
 from typing import (
     NamedTuple,
     Callable,
@@ -136,7 +138,6 @@ def draw_boat(
         card: Card,
         stack_depth: int,
         boat_params: BoatParams,
-        with_cutouts: bool,
         image_path: pathlib.Path | None = None,
         text: str | None = None,
 ) -> DrawBoatData:
@@ -169,14 +170,12 @@ def draw_boat(
     path_drawer.draw_arc(-boat_params.rounding_radius, boat_params.rounding_radius, boat_params.rounding_radius)
     path_drawer.draw_down(boat_params.boat_height - boat_params.rounding_radius)
 
-    if with_cutouts:
-        path_drawer.draw_right_dash_and_back(full_card_width)
+    path_drawer.draw_right_dash_and_back(full_card_width)
 
     path_drawer.draw_down(full_stack_depth)
 
-    if with_cutouts:
-        path_drawer.draw_right_dash_and_back(full_card_width)
-        path_drawer.draw_down_dash_and_back(side_size)
+    path_drawer.draw_right_dash_and_back(full_card_width)
+    path_drawer.draw_down_dash_and_back(side_size)
 
     # First flap, supporting bottom.
     def flap_catching_bottom():
@@ -184,9 +183,8 @@ def draw_boat(
         path_drawer.draw_left(full_stack_depth - 2 * boat_params.flap_cut)
         path_drawer.line_by(-boat_params.flap_cut, boat_params.flap_length)
 
-        if with_cutouts:
-            path_drawer.draw_right_dash_and_back(full_stack_depth)
-            path_drawer.draw_down_dash_and_back(side_size)
+        path_drawer.draw_right_dash_and_back(full_stack_depth)
+        path_drawer.draw_down_dash_and_back(side_size)
 
     flap_catching_bottom()
 
@@ -206,8 +204,7 @@ def draw_boat(
     path_drawer.draw_up(side_size - 2 * boat_params.flap_cut)
     path_drawer.line_by(-boat_params.flap_length, -boat_params.flap_cut)
 
-    if with_cutouts:
-        path_drawer.draw_down_dash_and_back(side_size)
+    path_drawer.draw_down_dash_and_back(side_size)
 
     # Fourth flap, catching bottom.
     flap_catching_bottom()
@@ -223,37 +220,26 @@ def draw_boat(
     size_diff = boat_params.boat_height - card.height
     offset = 0.2
     box_size = size_diff - offset * 2
-    bottom_image_size = int(front_size * 0.8)
 
     if image_path is not None:
         image_data = get_image_data(image_path)
-        if with_cutouts:
-            group.add(
-                drawing.image(
-                    image_data,
-                    insert=(boat_params.flap_length + full_stack_depth + boat_params.rounding_radius / 2, offset),
-                    size=(box_size, box_size),
-                )
-            )
-        else:
-            image = drawing.image(
+        group.add(
+            drawing.image(
                 image_data,
                 insert=(
-                    boat_params.flap_length + full_stack_depth + (full_card_width - bottom_image_size) / 2,
-                    boat_params.boat_height + full_stack_depth + (front_size - bottom_image_size) / 2,
+                    boat_params.flap_length
+                    + full_stack_depth
+                    + boat_params.rounding_radius / 2
+                    + card.width * 3.5 / 10
+                    ,
+                    offset
                 ),
-                size=(bottom_image_size, bottom_image_size),
+                size=(box_size, box_size),
             )
-            image.rotate(180, center=(
-                boat_params.flap_length + full_stack_depth + full_card_width / 2,
-                boat_params.boat_height + full_stack_depth + front_size / 2,
-            ))
-            group.add(
-                image
-            )
+        )
 
-    if text is not None and with_cutouts:
-        image_offset = 0 if image_path is None else box_size
+    if text is not None:
+        image_offset = card.width * 1 / 10 if image_path is None else card.width * 4.5 / 10
         group.add(
             drawing.text(
                 text,
@@ -284,7 +270,6 @@ def save_boat(
         card: Card,
         stack_depth: int,
         board_params: BoatParams,
-        with_cutouts: bool,
         image_path: pathlib.Path | None = None,
         text: str | None = None,
 ) -> None:
@@ -300,7 +285,6 @@ def save_boat(
         card=card,
         stack_depth=stack_depth,
         boat_params=board_params,
-        with_cutouts=with_cutouts,
         image_path=image_path,
         text=text,
     )
@@ -312,13 +296,13 @@ def save_boat(
     cairosvg.svg2svg(buffer.getvalue(), write_to=str(output_file))
 
 
-CARD_GENERIC = Card(88, 63)
+CARD_GENERIC = Card(90, 65)
 GENERIC_PARAMS = BoatParams(boat_height=75)
 
-CARD_RECT = Card(60, 60)
+CARD_RECT = Card(63, 63)
 RECT_PARAMS = BoatParams(boat_height=71)
 
-CARD_LARGE = Card(120, 70)
+CARD_LARGE = Card(123, 73)
 LARGE_PARAMS = BoatParams()
 
 
@@ -333,23 +317,23 @@ class ToCut(NamedTuple):
 
 
 def make_monster(name: str, stack_depth: int, alt_name: str | None = None) -> ToCut:
-    image = pathlib.Path('./icons/monsters') / f'{name.lower()}.svg'
-    if not image.exists():
-        image = None
+    # image = pathlib.Path('./icons/monsters') / f'{name.lower()}.svg'
+    # if not image.exists():
+    #     image = None
     return ToCut(
         filename=f'monster_{name}',
         card=CARD_GENERIC,
         params=GENERIC_PARAMS,
         stack_depth=stack_depth,
-        image=image,
-        text=alt_name or name,
+        image=None,
+        text=None,
     )
 
 
 def make_equip(image: str | None, text: str | None, stack_depth: int) -> ToCut:
     image_path = image and pathlib.Path('./icons/elements') / f'{image}.svg'
     return ToCut(
-        filename=f'eq_{image or text}',
+        filename=f'eq_{image or text}_{text}',
         card=CARD_RECT,
         params=RECT_PARAMS,
         stack_depth=stack_depth,
@@ -408,11 +392,12 @@ MONSTERS = [
     make_monster(name='Dual Blades', stack_depth=18),
     make_monster(name='Heavy Gun', stack_depth=18, alt_name='Gunbow'),
 
-    make_monster(name='Campaign', stack_depth=10),
+    make_monster(name='Havoc', stack_depth=10),
 ]
 
 EQUIPMENT = [
-    make_equip(equip_type, equip_type, stack_depth=17)
+    make_equip(equip_type, f'{level}', stack_depth=12)
+    for level in [1, 2, 3]
     for equip_type in [
         'Coral',
         'Fire',
@@ -432,7 +417,8 @@ RAW_EQUIPMENT = [
 ]
 
 POTIONS = [
-    make_equip('potion', text='Potions', stack_depth=25),
+    make_equip('potion', text=f'{level}', stack_depth=18)
+    for level in [1, 2, 3]
 ]
 
 WEAPONS = [
@@ -448,11 +434,10 @@ TO_CUT = MONSTERS + EQUIPMENT + RAW_EQUIPMENT + POTIONS + WEAPONS
 
 
 def handle_cut(cut_input: ToCut) -> None:
-    for cutout, suffix in [(True, 'internal'), (False, 'external')]:
+    for cutout, suffix in [(True, 'internal')]:
         file_path = pathlib.Path('./output') / f'{cut_input.filename}_{suffix}.svg'
         save_boat(
             file_path,
-            with_cutouts=cutout,
             card=cut_input.card,
             board_params=cut_input.params,
             stack_depth=cut_input.stack_depth,
