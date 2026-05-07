@@ -230,7 +230,7 @@ def draw_boat(
                     boat_params.flap_length
                     + full_stack_depth
                     + boat_params.rounding_radius / 2
-                    + card.width * 3.5 / 10
+                    + card.width * 0 / 10
                     ,
                     offset
                 ),
@@ -239,7 +239,7 @@ def draw_boat(
         )
 
     if text is not None:
-        image_offset = card.width * 1 / 10 if image_path is None else card.width * 4.5 / 10
+        image_offset = card.width * 1.25 / 10 if image_path is not None else card.width * 1.25 / 10
         group.add(
             drawing.text(
                 text,
@@ -316,17 +316,17 @@ class ToCut(NamedTuple):
     with_internal_flaps: bool = False
 
 
-def make_monster(name: str, stack_depth: int, alt_name: str | None = None) -> ToCut:
-    # image = pathlib.Path('./icons/monsters') / f'{name.lower()}.svg'
-    # if not image.exists():
-    #     image = None
+def make_monster(name: str, stack_depth: int, force_no_image: bool = False) -> ToCut:
+    image = pathlib.Path('./icons/monsters') / f'{name.lower()}.svg'
+    if not image.exists() or force_no_image:
+        image = None
     return ToCut(
         filename=f'monster_{name}',
         card=CARD_GENERIC,
         params=GENERIC_PARAMS,
         stack_depth=stack_depth,
-        image=None,
-        text=None,
+        image=image,
+        text=name,
     )
 
 
@@ -385,18 +385,20 @@ MONSTERS = [
     make_monster(name='Xitheros', stack_depth=10),
     make_monster(name='Taraska', stack_depth=10),
 
-    make_monster(name='Great sword', stack_depth=18, alt_name='Sword'),
-    make_monster(name='Great bow', stack_depth=18, alt_name='Bow'),
-    make_monster(name='Hammer', stack_depth=18),
-    make_monster(name='Sword and Shield', stack_depth=18, alt_name='Shield'),
-    make_monster(name='Dual Blades', stack_depth=18),
-    make_monster(name='Heavy Gun', stack_depth=18, alt_name='Gunbow'),
+    make_monster(name='Dareon', stack_depth=33, force_no_image=True),
+    make_monster(name='Mirah', stack_depth=33, force_no_image=True),
+    make_monster(name='Thoreg', stack_depth=33, force_no_image=True),
+    make_monster(name='Ljonar', stack_depth=33, force_no_image=True),
+    make_monster(name='Karah', stack_depth=33, force_no_image=True),
+    make_monster(name='Heleren', stack_depth=33, force_no_image=True),
+    make_monster(name='Zaraya', stack_depth=33, force_no_image=True),
+    make_monster(name='Drusk', stack_depth=33, force_no_image=True),
 
     make_monster(name='Havoc', stack_depth=10),
 ]
 
 EQUIPMENT = [
-    make_equip(equip_type, f'{level}', stack_depth=12)
+    make_equip(equip_type, f'{equip_type} {level}', stack_depth=12)
     for level in [1, 2, 3]
     for equip_type in [
         'Coral',
@@ -412,12 +414,12 @@ EQUIPMENT = [
 ]
 
 RAW_EQUIPMENT = [
-    make_equip(image=None, text='Rewards', stack_depth=14),
-    make_equip(image=None, text='Base eq', stack_depth=3),
+    make_equip(image=None, text='Rewards', stack_depth=39),
+    make_equip(image=None, text='Base eq', stack_depth=7),
 ]
 
 POTIONS = [
-    make_equip('potion', text=f'{level}', stack_depth=18)
+    make_equip('potion', text=f'Potion {level}', stack_depth=18)
     for level in [1, 2, 3]
 ]
 
