@@ -296,6 +296,9 @@ def save_boat(
     cairosvg.svg2svg(buffer.getvalue(), write_to=str(output_file))
 
 
+CARD_ATTRITION = Card(66, 44)
+ATTRITION_PARAMS = BoatParams()
+
 CARD_GENERIC = Card(90, 65)
 GENERIC_PARAMS = BoatParams(boat_height=75)
 
@@ -356,34 +359,35 @@ def make_weapon(image: str, text: str, stack_depth: int = 8) -> ToCut:
     )
 
 
+DEFAULT_MONSTER = 26
 MONSTERS = [
-    make_monster(name='Vyraxen', stack_depth=10),
-    make_monster(name='Kharja', stack_depth=10),
-    make_monster(name='Toramat', stack_depth=10),
-    make_monster(name='Dygorax', stack_depth=10),
-    make_monster(name='Korowon', stack_depth=10),
-    make_monster(name='Felaxir', stack_depth=10),
-    make_monster(name='Morkraas', stack_depth=10),
-    make_monster(name='Jekoros', stack_depth=10),
-    make_monster(name='Hurom', stack_depth=10),
-    make_monster(name='Tarragua', stack_depth=10),
-    make_monster(name='Ozew', stack_depth=13),
-    make_monster(name='Orouxen', stack_depth=15),
-    make_monster(name='Awakened', stack_depth=14),
+    make_monster(name='Vyraxen', stack_depth=DEFAULT_MONSTER),
+    make_monster(name='Kharja', stack_depth=DEFAULT_MONSTER),
+    make_monster(name='Toramat', stack_depth=DEFAULT_MONSTER),
+    make_monster(name='Dygorax', stack_depth=DEFAULT_MONSTER),
+    make_monster(name='Korowon', stack_depth=DEFAULT_MONSTER),
+    make_monster(name='Felaxir', stack_depth=DEFAULT_MONSTER),
+    make_monster(name='Morkraas', stack_depth=DEFAULT_MONSTER),
+    make_monster(name='Jekoros', stack_depth=DEFAULT_MONSTER),
+    make_monster(name='Hurom', stack_depth=DEFAULT_MONSTER),
+    make_monster(name='Tarragua', stack_depth=DEFAULT_MONSTER),
+    make_monster(name='Ozew', stack_depth=29),
+    make_monster(name='Orouxen', stack_depth=44),
+    make_monster(name='Awakened', stack_depth=39),
 
-    make_monster(name='Pazis', stack_depth=10),
-    make_monster(name='Nagarjas', stack_depth=10),
+    make_monster(name='Pazis', stack_depth=43),
+    make_monster(name='Nagarjas', stack_depth=DEFAULT_MONSTER),
 
-    make_monster(name='Hydar', stack_depth=10),
-    make_monster(name='Reikal', stack_depth=10),
+    make_monster(name='Hydar', stack_depth=38),
+    make_monster(name='Reikal', stack_depth=46),
 
-    make_monster(name='Sirkaaj', stack_depth=10),
-    make_monster(name='Mamuraak', stack_depth=10),
+    make_monster(name='Sirkaaj', stack_depth=DEFAULT_MONSTER),
+    make_monster(name='Mamuraak', stack_depth=DEFAULT_MONSTER),
 
-    make_monster(name='Zekath', stack_depth=10),
-    make_monster(name='Zekalith', stack_depth=10),
-    make_monster(name='Xitheros', stack_depth=10),
-    make_monster(name='Taraska', stack_depth=10),
+    make_monster(name='Zekath', stack_depth=DEFAULT_MONSTER),
+    make_monster(name='Zekalith', stack_depth=DEFAULT_MONSTER),
+    make_monster(name='Xitheros', stack_depth=30),
+    make_monster(name='Taraska', stack_depth=DEFAULT_MONSTER),
 
     make_monster(name='Dareon', stack_depth=33, force_no_image=True),
     make_monster(name='Mirah', stack_depth=33, force_no_image=True),
@@ -394,7 +398,7 @@ MONSTERS = [
     make_monster(name='Zaraya', stack_depth=33, force_no_image=True),
     make_monster(name='Drusk', stack_depth=33, force_no_image=True),
 
-    make_monster(name='Havoc', stack_depth=10),
+    make_monster(name='Havoc', stack_depth=5),
 ]
 
 EQUIPMENT = [
@@ -423,6 +427,9 @@ POTIONS = [
     for level in [1, 2, 3]
 ]
 
+WEAPON_SINGLE_ELEMENT_DEPTH = 14
+WEAPON_REMAINING_DEPTH = 20
+
 WEAPONS = [
     make_weapon('great bow', 'Great Bow'),
     make_weapon('great sword', 'Great Sword'),
@@ -431,6 +438,10 @@ WEAPONS = [
     make_weapon('dual blade', 'Dual Blade'),
     make_weapon('heavy gun', 'Heavy Gun'),
 ]
+
+QUESTS_PACK_DEPTH = 29
+ATTRITION_PLUS_OZEW_DEPTH = 19
+PRIMORDIAL_DEPTH = 7
 
 TO_CUT = MONSTERS + EQUIPMENT + RAW_EQUIPMENT + POTIONS + WEAPONS
 
