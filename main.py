@@ -1,9 +1,7 @@
 import base64
-import contextlib
 import io
 import math
 import pathlib
-import xml.etree.ElementTree
 from typing import (
     NamedTuple,
     Callable,
@@ -24,6 +22,18 @@ SIZE = (make_mm(A4_WIDTH), make_mm(A4_HEIGHT))
 VIEW_BOX = f'{0} {0} {A4_WIDTH} {A4_HEIGHT}'
 HAIRLINE_THIN = '0.25px'
 
+ELEMENTS = [
+    'Coral',
+    'Fire',
+    'Thunder',
+    'Horn',
+    'Metal',
+    'Crystal',
+    'Feather',
+    'Ice',
+    'Venom',
+]
+
 
 class Card(NamedTuple):
     width: int
@@ -40,6 +50,7 @@ class BoatParams(NamedTuple):
     flap_length: int = 10
     flap_cut: int = 2
     internal_flap_ratio: float = 0.6
+    force_box_size: float | None = None
 
     def front_size(self, card_height: int) -> int:
         return int(math.ceil(card_height * self.card_cover_front))
@@ -219,7 +230,7 @@ def draw_boat(
 
     size_diff = boat_params.boat_height - card.height
     offset = 0.2
-    box_size = size_diff - offset * 2
+    box_size = boat_params.force_box_size or (size_diff - offset * 2)
 
     if image_path is not None:
         image_data = get_image_data(image_path)
@@ -230,8 +241,7 @@ def draw_boat(
                     boat_params.flap_length
                     + full_stack_depth
                     + boat_params.rounding_radius / 2
-                    + card.width * 0 / 10
-                    ,
+                    + card.width * 0 / 10,
                     offset
                 ),
                 size=(box_size, box_size),
@@ -296,8 +306,9 @@ def save_boat(
     cairosvg.svg2svg(buffer.getvalue(), write_to=str(output_file))
 
 
-CARD_ATTRITION = Card(66, 44)
-ATTRITION_PARAMS = BoatParams()
+# CARD_ATTRITION = Card(66, 44)
+CARD_ATTRITION = Card(44, 66)
+ATTRITION_PARAMS = BoatParams(force_box_size=5)
 
 CARD_GENERIC = Card(90, 65)
 GENERIC_PARAMS = BoatParams(boat_height=75)
@@ -306,7 +317,7 @@ CARD_RECT = Card(63, 63)
 RECT_PARAMS = BoatParams(boat_height=71)
 
 CARD_LARGE = Card(123, 73)
-LARGE_PARAMS = BoatParams()
+LARGE_PARAMS = BoatParams(force_box_size=7)
 
 
 class ToCut(NamedTuple):
@@ -316,7 +327,6 @@ class ToCut(NamedTuple):
     stack_depth: int
     image: pathlib.Path | None = None
     text: str | None = None
-    with_internal_flaps: bool = False
 
 
 def make_monster(name: str, stack_depth: int, force_no_image: bool = False) -> ToCut:
@@ -346,7 +356,7 @@ def make_equip(image: str | None, text: str | None, stack_depth: int) -> ToCut:
 
 
 def make_weapon(image: str, text: str, stack_depth: int = 8) -> ToCut:
-    image = pathlib.Path('./icons/monsters') / f'{image.lower()}.svg'
+    image = pathlib.Path('./icons/elements') / f'{image.lower()}.svg'
     if not image.exists():
         image = None
     return ToCut(
@@ -404,17 +414,7 @@ MONSTERS = [
 EQUIPMENT = [
     make_equip(equip_type, f'{equip_type} {level}', stack_depth=12)
     for level in [1, 2, 3]
-    for equip_type in [
-        'Coral',
-        'Fire',
-        'Thunder',
-        'Horn',
-        'Metal',
-        'Crystal',
-        'Feather',
-        'Ice',
-        'Venom',
-    ]
+    for equip_type in ELEMENTS
 ]
 
 RAW_EQUIPMENT = [
@@ -428,35 +428,59 @@ POTIONS = [
 ]
 
 WEAPON_SINGLE_ELEMENT_DEPTH = 14
-WEAPON_REMAINING_DEPTH = 20
+WEAPON_REMAINING_DEPTH = 19
 
 WEAPONS = [
-    make_weapon('great bow', 'Great Bow'),
-    make_weapon('great sword', 'Great Sword'),
-    make_weapon('hammer', 'Hammer'),
-    make_weapon('sword and shield', 'Sword and Shield'),
-    make_weapon('dual blade', 'Dual Blade'),
-    make_weapon('heavy gun', 'Heavy Gun'),
-]
+              make_weapon(element, element, stack_depth=WEAPON_SINGLE_ELEMENT_DEPTH)
+              for element in ELEMENTS
+          ] + [
+              make_weapon('<None>', 'Basic + Ancient + Help', stack_depth=WEAPON_REMAINING_DEPTH)
+          ]
 
 QUESTS_PACK_DEPTH = 29
 ATTRITION_PLUS_OZEW_DEPTH = 19
 PRIMORDIAL_DEPTH = 7
 
-TO_CUT = MONSTERS + EQUIPMENT + RAW_EQUIPMENT + POTIONS + WEAPONS
+ATTRITION = [
+    ToCut(
+        filename='attrition_attrition',
+        card=CARD_ATTRITION,
+        params=ATTRITION_PARAMS,
+        stack_depth=ATTRITION_PLUS_OZEW_DEPTH,
+        image=None,
+        text='Attrition',
+    ),
+    ToCut(
+        filename='attrition_primordial',
+        card=CARD_ATTRITION,
+        params=ATTRITION_PARAMS,
+        stack_depth=PRIMORDIAL_DEPTH,
+        image=None,
+        text='Blood',
+    ),
+    ToCut(
+        filename='attrition_quest',
+        card=CARD_ATTRITION,
+        params=ATTRITION_PARAMS,
+        stack_depth=QUESTS_PACK_DEPTH,
+        image=None,
+        text='Quests',
+    ),
+]
+
+TO_CUT = MONSTERS + EQUIPMENT + RAW_EQUIPMENT + POTIONS + WEAPONS + ATTRITION
 
 
 def handle_cut(cut_input: ToCut) -> None:
-    for cutout, suffix in [(True, 'internal')]:
-        file_path = pathlib.Path('./output') / f'{cut_input.filename}_{suffix}.svg'
-        save_boat(
-            file_path,
-            card=cut_input.card,
-            board_params=cut_input.params,
-            stack_depth=cut_input.stack_depth,
-            image_path=cut_input.image,
-            text=cut_input.text,
-        )
+    file_path = pathlib.Path('./output') / f'{cut_input.filename}.svg'
+    save_boat(
+        file_path,
+        card=cut_input.card,
+        board_params=cut_input.params,
+        stack_depth=cut_input.stack_depth,
+        image_path=cut_input.image,
+        text=cut_input.text,
+    )
 
 
 def main() -> None:
